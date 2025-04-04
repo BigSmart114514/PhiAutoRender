@@ -3,7 +3,7 @@ name: Render PEZ File
 on:
   push:
     branches:
-      - main  # 或者你想要触发的任何分支
+      - main
 
 jobs:
   render:
@@ -24,50 +24,35 @@ jobs:
       - name: Verify FFmpeg version
         run: ffmpeg -version
         
-      - name: Install Dependencies (ffmpeg, jq, xvfb, alsa)
+      - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq xvfb alsa-utils
+          sudo apt-get install -y jq xvfb alsa-utils libasound2-plugins pulseaudio
 
-      - name: Try to configure a default audio device (PulseAudio)
+      - name: Configure PulseAudio with null sink
         run: |
-          sudo apt-get install -y pulseaudio
-          pulseaudio --start || true
-          pactl load-module module-null-sink sink_name=dummy sink_properties=device.description="Dummy Output" || true
+          pulseaudio --kill || true
+          pulseaudio --daemonize --exit-idle-time=-1 --log-level=4
+          pactl load-module module-null-sink sink_name=dummy
+          pactl set-default-sink dummy
+          echo 'PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native' >> $GITHUB_ENV
 
       - name: Download and Install Phi-Recorder
         run: |
           LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/2278535805/Phi-Recorder/releases/latest | jq -r '.assets[] | select(.name | endswith("amd64.deb")) | .browser_download_url')
-
-          if [ -n "$LATEST_RELEASE_URL" ]; then
-            echo "Downloading Phi-Recorder from: $LATEST_RELEASE_URL"
-            wget "$LATEST_RELEASE_URL" -O phi-recorder.deb
-            sudo apt-get update
-            sudo apt-get install -y ./phi-recorder.deb
-          else
-            echo "Error: No amd64.deb release found."
-            exit 1
-          fi
+          wget "$LATEST_RELEASE_URL" -O phi-recorder.deb
+          sudo apt-get install -y ./phi-recorder.deb
 
       - name: Prepare PEZ File
         run: |
           mkdir -p pez_files
           pez_file=$(find . -maxdepth 1 -name '*.pez' -print -quit)
-          if [ -n "$pez_file" ]; then
-             echo "PEZ file found: $pez_file, copying..."
-             cp "$pez_file" "pez_files/$(basename "$pez_file")"
-             echo "PEZ_BASENAME=$(basename "$pez_file")" >> $GITHUB_ENV
-          else
-             echo "Error: PEZ file not found in root directory."
-             exit 1
-          fi
-
-      - name: List current directory
-        run: ls -la
+          cp "$pez_file" "pez_files/$(basename "$pez_file")"
+          echo "PEZ_BASENAME=$(basename "$pez_file")" >> $GITHUB_ENV
 
       - name: Render PEZ File using Xvfb
         run: |
-          echo "Rendering pez_files/${PEZ_BASENAME} to ATRR.mp4 using xvfb"
+          export SDL_AUDIODRIVER=pulse
           xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" \
             phi-recorder --render "pez_files/${PEZ_BASENAME}" --output ATRR.mp4
 
