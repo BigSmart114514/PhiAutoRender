@@ -7,37 +7,38 @@ on:
 
 jobs:
   render:
-    runs-on: ubuntu-latest
+    # 关键改动：使用 Ubuntu 20.04
+    runs-on: ubuntu-20.04
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install FFmpeg
+      - name: Install Dependencies (ffmpeg and jq)
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          # 安装 ffmpeg 和 jq (用于解析 JSON)
+          sudo apt-get install -y ffmpeg jq
 
       - name: Download and Install Phi-Recorder
         run: |
           # 获取最新的 Release 信息
-          LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/2278535805/Phi-Recorder/releases/latest | jq -r .assets[].browser_download_url | grep amd64.deb)
+          LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/2278535805/Phi-Recorder/releases/latest | jq -r '.assets[] | select(.name | endswith("amd64.deb")) | .browser_download_url')
 
           # 下载 Phi-Recorder (如果找到了 amd64.deb)
           if [ -n "$LATEST_RELEASE_URL" ]; then
             echo "Downloading Phi-Recorder from: $LATEST_RELEASE_URL"
             wget "$LATEST_RELEASE_URL" -O phi-recorder.deb
 
-            # 尝试安装 libwebkit2gtk-4.1-0
-            echo installing libwebkit2gtk-4.1-0...
+            # 安装 Phi-Recorder 及其依赖
+            # 在 Ubuntu 20.04 上，apt 会自动尝试安装 libwebkit2gtk-4.0-37
+            # 注意：不再需要手动安装 libwebkit2gtk-4.1-0
             sudo apt-get update
-            sudo apt-get install -y libwebkit2gtk-4.1-0
-
-            # 安装 Phi-Recorder
+            # 使用 apt install 而不是 dpkg -i 可以更好地处理依赖关系
             sudo apt-get install -y ./phi-recorder.deb
           else
             echo "Error: No amd64.deb release found."
-            exit 1  # 退出工作流程，表示失败
+            exit 1
           fi
 
       - name: Prepare PEZ File
@@ -45,21 +46,29 @@ jobs:
           # 确保 pez 文件位于仓库的根目录
           # 如果不在根目录，需要修改 cp 命令
           mkdir -p pez_files
-          if [ -f "AbsoluTedisoRdeR.AcuteDisarray-AT.pez" ]; then
-            echo "PEZ file found in root directory, copying..."
-            cp "AbsoluTedisoRdeR.AcuteDisarray-AT.pez" pez_files/AbsoluTedisoRdeR.AcuteDisarray-AT.pez
+          # 更健壮地查找 PEZ 文件，避免硬编码文件名 (如果可能变化)
+          # 如果文件名固定，原来的方式也可以
+          pez_file=$(find . -maxdepth 1 -name '*.pez' -print -quit)
+          if [ -n "$pez_file" ]; then
+             echo "PEZ file found: $pez_file, copying..."
+             cp "$pez_file" "pez_files/$(basename "$pez_file")"
+             # 将找到的文件名存储，以便后续使用
+             echo "PEZ_BASENAME=$(basename "$pez_file")" >> $GITHUB_ENV
           else
-            echo "Error: PEZ file not found in root directory."
-            exit 1
+             echo "Error: PEZ file not found in root directory."
+             exit 1
           fi
+
 
       - name: Render PEZ File
         run: |
-          # 确保 phi-recorder 在 PATH 中，或者使用完整路径
-          phi-recorder --render "pez_files/AbsoluTedisoRdeR.AcuteDisarray-AT.pez" --output ATRR.mp4
+          # 运行 phi-recorder
+          # 使用从上一步获取的文件名
+          echo "Rendering pez_files/${PEZ_BASENAME} to ATRR.mp4"
+          phi-recorder --render "pez_files/${PEZ_BASENAME}" --output ATRR.mp4
 
       - name: Upload Rendered Video
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v4 # 使用 v4 最新版
         with:
           name: rendered-video
           path: ATRR.mp4
