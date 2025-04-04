@@ -27,8 +27,10 @@ jobs:
           if [ -n "$LATEST_RELEASE_URL" ]; then
             echo "Downloading Phi-Recorder from: $LATEST_RELEASE_URL"
             wget "$LATEST_RELEASE_URL" -O phi-recorder.deb
-            # 安装 Phi-Recorder
+            # 更新软件包列表并升级现有软件包
             sudo apt-get update
+            sudo apt-get upgrade -y
+            # 安装 Phi-Recorder
             sudo apt-get install -y ./phi-recorder.deb
           else
             echo "Error: No amd64.deb release found."
@@ -53,8 +55,8 @@ jobs:
           # 确保 phi-recorder 在 PATH 中，或者使用完整路径
           phi-recorder --render "pez_files/AbsoluTedisoRdeR.AcuteDisarray-AT.pez" --output ATRR.mp4
 
-      - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v4.6.2
+      - name: Upload Rendered Video
+        uses: actions/upload-artifact@v3
         with:
           name: rendered-video
           path: ATRR.mp4
