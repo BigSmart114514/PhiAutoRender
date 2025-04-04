@@ -7,7 +7,6 @@ on:
 
 jobs:
   render:
-    # 继续使用 Ubuntu 20.04
     runs-on: ubuntu-20.04
 
     steps:
@@ -17,42 +16,18 @@ jobs:
       - name: Install Dependencies (ffmpeg, jq, xvfb, alsa)
         run: |
           sudo apt-get update
-          # 安装 ffmpeg, jq, xvfb, 和 alsa 相关工具
           sudo apt-get install -y ffmpeg jq xvfb alsa-utils
 
-      - name: Configure Dummy ALSA Device
+      - name: Try to configure a default audio device (PulseAudio)
         run: |
-          # 安装 loopback 设备
-          sudo modprobe snd-dummy
-          # 配置 ALSA，创建 ~/.asoundrc 文件
-          mkdir -p $HOME/.asoundrc.d
-          cat <<EOF > $HOME/.asoundrc
-          pcm.!default {
-            type plug
-            slave.pcm "dummy"
-          }
-
-          ctl.!default {
-            type hw
-            card "dummy"
-          }
-
-          pcm.dummy {
-            type hw
-            card "dummy"
-          }
-          EOF
-          cat $HOME/.asoundrc
-          # 设置权限
-          chmod 644 $HOME/.asoundrc
-          # 检查是否成功加载
-          aplay -l
-          #输出声卡信息
-          cat /proc/asound/cards
+          # Try installing PulseAudio and a null sink.  This is another common
+          # approach to providing a dummy audio device.
+          sudo apt-get install -y pulseaudio
+          pulseaudio --start || true
+          pactl load-module module-null-sink sink_name=dummy sink_properties=device.description="Dummy Output" || true
 
       - name: Download and Install Phi-Recorder
         run: |
-          # 获取最新的 Release 信息
           LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/2278535805/Phi-Recorder/releases/latest | jq -r '.assets[] | select(.name | endswith("amd64.deb")) | .browser_download_url')
 
           if [ -n "$LATEST_RELEASE_URL" ]; then
@@ -81,12 +56,8 @@ jobs:
       - name: List current directory
         run: ls -la
 
-
       - name: Render PEZ File using Xvfb
         run: |
-          # 使用 xvfb-run 包装 phi-recorder 命令
-          # --auto-servernum: 自动查找可用的服务器号
-          # --server-args="-screen 0 1280x720x24": 设置虚拟屏幕分辨率和色深 (可根据需要调整)
           echo "Rendering pez_files/${PEZ_BASENAME} to ATRR.mp4 using xvfb"
           xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" \
             phi-recorder --render "pez_files/${PEZ_BASENAME}" --output ATRR.mp4
