@@ -13,50 +13,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install FFmpeg
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
+      - name: Check available libwebkit2gtk versions
+        run: apt-cache search libwebkit2gtk
 
-      - name: Download and Install Phi-Recorder
-        run: |
-          # 获取最新的 Release 信息
-          LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/2278535805/Phi-Recorder/releases/latest | jq -r .assets[].browser_download_url | grep amd64.deb)
-
-          # 下载 Phi-Recorder (如果找到了 amd64.deb)
-          if [ -n "$LATEST_RELEASE_URL" ]; then
-            echo "Downloading Phi-Recorder from: $LATEST_RELEASE_URL"
-            wget "$LATEST_RELEASE_URL" -O phi-recorder.deb
-            # 更新软件包列表并升级现有软件包
-            sudo apt-get update
-            sudo apt-get upgrade -y
-            # 安装 Phi-Recorder
-            sudo apt-get install -y ./phi-recorder.deb
-          else
-            echo "Error: No amd64.deb release found."
-            exit 1  # 退出工作流程，表示失败
-          fi
-
-      - name: Prepare PEZ File
-        run: |
-          # 确保 pez 文件位于仓库的根目录
-          # 如果不在根目录，需要修改 cp 命令
-          mkdir -p pez_files
-          if [ -f "AbsoluTedisoRdeR.AcuteDisarray-AT.pez" ]; then
-            echo "PEZ file found in root directory, copying..."
-            cp "AbsoluTedisoRdeR.AcuteDisarray-AT.pez" pez_files/AbsoluTedisoRdeR.AcuteDisarray-AT.pez
-          else
-            echo "Error: PEZ file not found in root directory."
-            exit 1
-          fi
-
-      - name: Render PEZ File
-        run: |
-          # 确保 phi-recorder 在 PATH 中，或者使用完整路径
-          phi-recorder --render "pez_files/AbsoluTedisoRdeR.AcuteDisarray-AT.pez" --output ATRR.mp4
-
-      - name: Upload Rendered Video
-        uses: actions/upload-artifact@v4.6.2
-        with:
-          name: rendered-video
-          path: ATRR.mp4
