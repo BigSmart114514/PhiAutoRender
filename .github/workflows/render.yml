@@ -12,8 +12,35 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        
-      - name: Download latest FFmpeg static build
+
+      - name: Setup Audio System
+        run: |
+          # 安装核心依赖
+          sudo apt-get update
+          sudo apt-get install -y \
+            xvfb \
+            alsa-utils \
+            libasound2-plugins \
+            pulseaudio
+
+          # 配置ALSA使用PulseAudio插件
+          echo 'pcm.!default { type pulse }' | sudo tee /etc/alsa/conf.d/99-pulse.conf
+          echo 'ctl.!default { type pulse }' | sudo tee -a /etc/alsa/conf.d/99-pulse.conf
+
+          # 配置PulseAudio守护进程
+          mkdir -p $HOME/.config/pulse
+          echo "default-server = unix:${XDG_RUNTIME_DIR}/pulse/native" > $HOME/.config/pulse/client.conf
+          echo "autospawn = no" >> $HOME/.config/pulse/client.conf
+
+          # 启动PulseAudio服务
+          pulseaudio --kill 2>/dev/null || true
+          pulseaudio --daemonize --log-level=4 --log-target=stderr --exit-idle-time=-1
+
+          # 创建虚拟音频设备
+          pactl load-module module-null-sink sink_name=dummy sink_properties=device.description="Dummy_Output"
+          pactl set-default-sink dummy
+
+      - name: Install FFmpeg
         run: |
           wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
           tar xJf ffmpeg-release-amd64-static.tar.xz
@@ -21,23 +48,7 @@ jobs:
           sudo mv ffmpeg-*-static/ffprobe /usr/local/bin/
           sudo chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe
 
-      - name: Verify FFmpeg version
-        run: ffmpeg -version
-        
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq xvfb alsa-utils libasound2-plugins pulseaudio
-
-      - name: Configure PulseAudio with null sink
-        run: |
-          pulseaudio --kill || true
-          pulseaudio --daemonize --exit-idle-time=-1 --log-level=4
-          pactl load-module module-null-sink sink_name=dummy
-          pactl set-default-sink dummy
-          echo 'PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native' >> $GITHUB_ENV
-
-      - name: Download and Install Phi-Recorder
+      - name: Install Phi-Recorder
         run: |
           LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/2278535805/Phi-Recorder/releases/latest | jq -r '.assets[] | select(.name | endswith("amd64.deb")) | .browser_download_url')
           wget "$LATEST_RELEASE_URL" -O phi-recorder.deb
@@ -50,13 +61,26 @@ jobs:
           cp "$pez_file" "pez_files/$(basename "$pez_file")"
           echo "PEZ_BASENAME=$(basename "$pez_file")" >> $GITHUB_ENV
 
-      - name: Render PEZ File using Xvfb
+      - name: Debug Audio Config
         run: |
-          export SDL_AUDIODRIVER=pulse
-          xvfb-run --auto-servernum --server-args="-screen 0 1280x720x24" \
+          echo "===== ALSA Devices ====="
+          aplay -L
+          echo "\n===== PulseAudio Sinks ====="
+          pactl list sinks
+          echo "\n===== Environment Variables ====="
+          printenv | grep -E 'PULSE|ALSA|XDG'
+
+      - name: Render with Xvfb
+        env:
+          SDL_AUDIODRIVER: pulseaudio
+          ALSA_CONFIG_PATH: /etc/alsa/conf.d/99-pulse.conf
+          PULSE_SERVER: unix:${XDG_RUNTIME_DIR}/pulse/native
+        run: |
+          xvfb-run --auto-servernum \
+            --server-args="-screen 0 1280x720x24 -ac -listen tcp" \
             phi-recorder --render "pez_files/${PEZ_BASENAME}" --output ATRR.mp4
 
-      - name: Upload Rendered Video
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: rendered-video
