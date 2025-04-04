@@ -12,14 +12,22 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        
+      - name: Download latest FFmpeg static build
+        run: |
+          wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
+          tar xJf ffmpeg-release-amd64-static.tar.xz
+          sudo mv ffmpeg-*-static/ffmpeg /usr/local/bin/
+          sudo mv ffmpeg-*-static/ffprobe /usr/local/bin/
+          sudo chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe
 
+      - name: Verify FFmpeg version
+        run: ffmpeg -version
+        
       - name: Install Dependencies (ffmpeg, jq, xvfb, alsa)
         run: |
           sudo apt-get update
-          # 尝试安装最新版本的 ffmpeg
-          sudo add-apt-repository ppa:jonathonf/ffmpeg-4
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg jq xvfb alsa-utils
+          sudo apt-get install -y jq xvfb alsa-utils
 
       - name: Try to configure a default audio device (PulseAudio)
         run: |
