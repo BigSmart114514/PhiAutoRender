@@ -29,6 +29,7 @@ jobs:
             wget "$LATEST_RELEASE_URL" -O phi-recorder.deb
 
             # 尝试安装 libwebkit2gtk-4.1-0
+            echo installing libwebkit2gtk-4.1-0...
             sudo apt-get update
             sudo apt-get install -y libwebkit2gtk-4.1-0
 
