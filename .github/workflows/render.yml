@@ -14,11 +14,41 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Dependencies (ffmpeg, jq, and xvfb) # <--- 添加 xvfb
+      - name: Install Dependencies (ffmpeg, jq, xvfb, alsa)
         run: |
           sudo apt-get update
-          # 安装 ffmpeg, jq, 和 xvfb
-          sudo apt-get install -y ffmpeg jq xvfb
+          # 安装 ffmpeg, jq, xvfb, 和 alsa 相关工具
+          sudo apt-get install -y ffmpeg jq xvfb alsa-utils
+
+      - name: Configure Dummy ALSA Device
+        run: |
+          # 安装 loopback 设备
+          sudo modprobe snd-dummy
+          # 配置 ALSA，创建 ~/.asoundrc 文件
+          mkdir -p $HOME/.asoundrc.d
+          cat <<EOF > $HOME/.asoundrc
+          pcm.!default {
+            type plug
+            slave.pcm "dummy"
+          }
+
+          ctl.!default {
+            type hw
+            card "dummy"
+          }
+
+          pcm.dummy {
+            type hw
+            card "dummy"
+          }
+          EOF
+          cat $HOME/.asoundrc
+          # 设置权限
+          chmod 644 $HOME/.asoundrc
+          # 检查是否成功加载
+          aplay -l
+          #输出声卡信息
+          cat /proc/asound/cards
 
       - name: Download and Install Phi-Recorder
         run: |
@@ -52,7 +82,7 @@ jobs:
         run: ls -la
 
 
-      - name: Render PEZ File using Xvfb # <--- 修改运行方式
+      - name: Render PEZ File using Xvfb
         run: |
           # 使用 xvfb-run 包装 phi-recorder 命令
           # --auto-servernum: 自动查找可用的服务器号
