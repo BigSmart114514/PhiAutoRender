@@ -1,4 +1,4 @@
-name: Render PEZ File
+name: Render PEZ File (Windows)
 
 on:
   push:
@@ -7,78 +7,59 @@ on:
 
 jobs:
   render:
-    runs-on: ubuntu-20.04
+    runs-on: windows-latest  # 切换为Windows运行环境
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Setup Audio System
+        shell: powershell
         run: |
-          # 安装核心依赖
-          sudo apt-get update
-          sudo apt-get install -y \
-            xvfb \
-            alsa-utils \
-            libasound2-plugins \
-            pulseaudio
-
-          # 配置ALSA使用PulseAudio插件
-          echo 'pcm.!default { type pulse }' | sudo tee /etc/alsa/conf.d/99-pulse.conf
-          echo 'ctl.!default { type pulse }' | sudo tee -a /etc/alsa/conf.d/99-pulse.conf
-
-          # 配置PulseAudio守护进程
-          mkdir -p $HOME/.config/pulse
-          echo "default-server = unix:${XDG_RUNTIME_DIR}/pulse/native" > $HOME/.config/pulse/client.conf
-          echo "autospawn = no" >> $HOME/.config/pulse/client.conf
-
-          # 启动PulseAudio服务
-          pulseaudio --kill 2>/dev/null || true
-          pulseaudio --daemonize --log-level=4 --log-target=stderr --exit-idle-time=-1
-
-          # 创建虚拟音频设备
-          pactl load-module module-null-sink sink_name=dummy sink_properties=device.description="Dummy_Output"
-          pactl set-default-sink dummy
+          # 安装虚拟音频驱动（参考网页6、7、8中FFmpeg的Windows配置思路）
+          choco install virtual-audio-device -y --ignore-checksums
+          
+          # 配置音频路由（需预装VB-CABLE，此处为示例配置）
+          Start-Process -FilePath "C:\Program Files\VB\CABLE\VBCABLE_Setup_x64.exe" -ArgumentList "-i -h"
 
       - name: Install FFmpeg
         run: |
-          wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
-          tar xJf ffmpeg-release-amd64-static.tar.xz
-          sudo mv ffmpeg-*-static/ffmpeg /usr/local/bin/
-          sudo mv ffmpeg-*-static/ffprobe /usr/local/bin/
-          sudo chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe
+          choco install ffmpeg -y  # 使用Chocolatey安装（参考网页6、7、8的安装方法）
+          refreshenv
 
       - name: Install Phi-Recorder
+        shell: powershell
         run: |
-          LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/2278535805/Phi-Recorder/releases/latest | jq -r '.assets[] | select(.name | endswith("amd64.deb")) | .browser_download_url')
-          wget "$LATEST_RELEASE_URL" -O phi-recorder.deb
-          sudo apt-get install -y ./phi-recorder.deb
+          # 下载最新Windows版安装包（参考网页9的安装包处理方式）
+          $release = Invoke-RestMethod 'https://api.github.com/repos/2278535805/Phi-Recorder/releases/latest'
+          $asset = $release.assets | Where-Object { $_.name -like '*windows*.exe' }
+          Invoke-WebRequest $asset.browser_download_url -OutFile phi-recorder-setup.exe
+          
+          # 静默安装
+          Start-Process -FilePath .\phi-recorder-setup.exe -ArgumentList "/S" -Wait
 
       - name: Prepare PEZ File
+        shell: powershell
         run: |
-          mkdir -p pez_files
-          pez_file=$(find . -maxdepth 1 -name '*.pez' -print -quit)
-          cp "$pez_file" "pez_files/$(basename "$pez_file")"
-          echo "PEZ_BASENAME=$(basename "$pez_file")" >> $GITHUB_ENV
+          New-Item -ItemType Directory -Path .\pez_files -Force
+          $pezFile = Get-ChildItem -Filter *.pez | Select-Object -First 1
+          Copy-Item $pezFile.FullName "pez_files\$($pezFile.Name)"
+          Write-Output "PEZ_BASENAME=$($pezFile.Name)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Debug Audio Config
+        shell: powershell
         run: |
-          echo "===== ALSA Devices ====="
-          aplay -L
-          echo "\n===== PulseAudio Sinks ====="
-          pactl list sinks
-          echo "\n===== Environment Variables ====="
-          printenv | grep -E 'PULSE|ALSA|XDG'
+          # Windows音频设备验证（参考网页9的系统检测思路）
+          Get-PnpDevice -Class "Media" | Format-Table
+          ffmpeg -list_devices true -f dshow -i dummy
 
-      - name: Render with Xvfb
+      - name: Render with Headless Display
+        shell: powershell
         env:
-          SDL_AUDIODRIVER: pulseaudio
-          ALSA_CONFIG_PATH: /etc/alsa/conf.d/99-pulse.conf
-          PULSE_SERVER: unix:${XDG_RUNTIME_DIR}/pulse/native
+          DISPLAY: ':0'
         run: |
-          xvfb-run --auto-servernum \
-            --server-args="-screen 0 1280x720x24 -ac -listen tcp" \
-            phi-recorder --render "pez_files/${PEZ_BASENAME}" --output ATRR.mp4
+          # 使用Windows自带的Headless模式（参考网页9的无界面运行思路）
+          phi-recorder --render "pez_files\$env:PEZ_BASENAME" --output ATRR.mp4
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
