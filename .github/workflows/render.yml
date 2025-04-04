@@ -16,12 +16,13 @@ jobs:
       - name: Install Dependencies (ffmpeg, jq, xvfb, alsa)
         run: |
           sudo apt-get update
+          # 尝试安装最新版本的 ffmpeg
+          sudo add-apt-repository ppa:jonathonf/ffmpeg-4
+          sudo apt-get update
           sudo apt-get install -y ffmpeg jq xvfb alsa-utils
 
       - name: Try to configure a default audio device (PulseAudio)
         run: |
-          # Try installing PulseAudio and a null sink.  This is another common
-          # approach to providing a dummy audio device.
           sudo apt-get install -y pulseaudio
           pulseaudio --start || true
           pactl load-module module-null-sink sink_name=dummy sink_properties=device.description="Dummy Output" || true
