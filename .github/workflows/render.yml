@@ -48,6 +48,12 @@ jobs:
              exit 1
           fi
 
+      - name: Fetch config.toml
+        run: |
+          # 假设 config.toml 位于仓库的根目录
+          cp config.toml .
+          echo "config.toml copied to current directory"
+
       - name: Render PEZ File using Xvfb # <--- 修改运行方式
         run: |
           # 使用 xvfb-run 包装 phi-recorder 命令
