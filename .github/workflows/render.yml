@@ -53,8 +53,8 @@ jobs:
           # 确保 phi-recorder 在 PATH 中，或者使用完整路径
           phi-recorder --render "pez_files/AbsoluTedisoRdeR.AcuteDisarray-AT.pez" --output ATRR.mp4
 
-      - name: Upload Rendered Video
-        uses: actions/upload-artifact@v3
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: rendered-video
           path: ATRR.mp4
