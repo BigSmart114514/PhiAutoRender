@@ -6,7 +6,7 @@ hardwareAccel = true
 sampleCount = 8
 hevc = false
 mpeg4 = false
-# customEncoder = ""
+customEncoder = "libx264"
 bitrateControl = "CRF"
 bitrate = "26"
 
