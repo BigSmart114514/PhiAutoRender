@@ -58,7 +58,7 @@ limitThreshold = 1.0
 
 
 # Other 其他
-endingLength = 0.0
+endingLength = 10.0
 watermark = "Rendered with Phi-Recorder."
 combo = "AUTOPLAY"
 difficulty = ""
