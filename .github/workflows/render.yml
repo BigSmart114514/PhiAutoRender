@@ -1,10 +1,10 @@
-name: Install FFmpeg
+name: Video Render Pipeline
 
 on: [push]
 
 jobs:
   Render:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04  # Updated to newer Ubuntu version
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -12,7 +12,14 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg xvfb libayatana-appindicator3-1 libwebkit2gtk-4.0-37
+          sudo apt-get install -y \
+            ffmpeg \
+            xvfb \
+            libgl1-mesa-glx \
+            libgl1-mesa-dri \
+            mesa-utils \
+            libayatana-appindicator3-1 \
+            libwebkit2gtk-4.0-37
 
       - name: Install Phi-Recorder
         run: |
@@ -23,4 +30,17 @@ jobs:
           sudo dpkg -i phi-recorder.deb
 
       - name: Render with Xvfb
-        run: xvfb-run phi-recorder --render --output "ATRR.mp4"
+        run: |
+          export LIBGL_ALWAYS_SOFTWARE=1
+          export MESA_GL_VERSION_OVERRIDE=3.3
+          xvfb-run -s "-screen 0 1920x1080x24" -e xvfb-errors.log \
+            phi-recorder --render --output "ATRR.mp4"
+        env:
+          RUST_BACKTRACE: 1  # Enable full error backtraces
+        
+      - name: Upload Xvfb Error Log
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: xvfb-errors
+          path: xvfb-errors.log
