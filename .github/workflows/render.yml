@@ -15,12 +15,15 @@ jobs:
           sudo apt-get install -y ffmpeg
       - name: Checkout and Install Latest Phi-Recorder
         run: |
-          # 获取最新 release 信息并下载安装 .deb 包
           LATEST_RELEASE=$(curl -s https://api.github.com/repos/2278535805/Phi-Recorder/releases/latest | jq -r '.tag_name')
           LATEST_VERSION="${LATEST_RELEASE:1}" # 去掉 v 前缀
           DEB_URL="https://github.com/2278535805/Phi-Recorder/releases/download/v${LATEST_VERSION}/phi-recorder_${LATEST_VERSION}_amd64.deb"
           echo "Downloading from: ${DEB_URL}"
           wget "${DEB_URL}" -O phi-recorder.deb
+
+          # 更新 apt 仓库并安装依赖
+          sudo apt-get update
+          sudo apt-get install -y libayatana-appindicator3-1 libwebkit2gtk-4.0-37
 
           # 安装 .deb 包
           sudo dpkg -i phi-recorder.deb
