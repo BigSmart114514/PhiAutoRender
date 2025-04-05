@@ -27,3 +27,8 @@ jobs:
 
           # 安装 .deb 包
           sudo dpkg -i phi-recorder.deb
+
+      - name: Render
+        run:
+          phi-recorder --render --output "ATRR.mp4"
+          
