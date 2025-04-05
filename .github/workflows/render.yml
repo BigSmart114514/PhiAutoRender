@@ -9,26 +9,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install FFmpeg
+      - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg
-      - name: Checkout and Install Latest Phi-Recorder
+          sudo apt-get install -y ffmpeg xvfb libayatana-appindicator3-1 libwebkit2gtk-4.0-37
+
+      - name: Install Phi-Recorder
         run: |
           LATEST_RELEASE=$(curl -s https://api.github.com/repos/2278535805/Phi-Recorder/releases/latest | jq -r '.tag_name')
-          LATEST_VERSION="${LATEST_RELEASE:1}" # 去掉 v 前缀
+          LATEST_VERSION="${LATEST_RELEASE:1}"
           DEB_URL="https://github.com/2278535805/Phi-Recorder/releases/download/v${LATEST_VERSION}/phi-recorder_${LATEST_VERSION}_amd64.deb"
-          echo "Downloading from: ${DEB_URL}"
           wget "${DEB_URL}" -O phi-recorder.deb
-
-          # 更新 apt 仓库并安装依赖
-          sudo apt-get update
-          sudo apt-get install -y libayatana-appindicator3-1 libwebkit2gtk-4.0-37
-
-          # 安装 .deb 包
           sudo dpkg -i phi-recorder.deb
 
-      - name: Render
-        run:
-          phi-recorder --render --output "ATRR.mp4"
-          
+      - name: Render with Xvfb
+        run: xvfb-run phi-recorder --render --output "ATRR.mp4"
