@@ -29,6 +29,6 @@ jobs:
         run: |
           export LIBGL_ALWAYS_SOFTWARE=1
           export MESA_GL_VERSION_OVERRIDE=3.3
-          xvfb-run -s "-screen 0 1920x1080x24" phi-recorder --render --output "ATRR.mp4"
+          xvfb-run -s "-screen 0 1920x1080x24" phi-recorder --render AbsoluTedisoRdeR.AcuteDisarray-AT.pez --output "ATRR.mp4"
         env:
           RUST_BACKTRACE: 1
