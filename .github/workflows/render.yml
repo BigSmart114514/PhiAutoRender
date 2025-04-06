@@ -22,6 +22,9 @@ jobs:
           wget "${DEB_URL}" -O phi-recorder.deb
           sudo dpkg -i phi-recorder.deb
 
+      - name: List Dir
+        run: ls -l
+      
       - name: Render with Xvfb
         run: |
           export LIBGL_ALWAYS_SOFTWARE=1
