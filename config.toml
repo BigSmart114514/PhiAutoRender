@@ -23,7 +23,7 @@ challengeRank = 3
 # res_pack_path = ""
 noteScale = 1.0
 chartDebug = 0.0
-chartRatio = 0.50
+chartRatio = 0.30
 
 disableLoading = false
 renderLine = true
