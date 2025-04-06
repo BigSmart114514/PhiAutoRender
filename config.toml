@@ -22,8 +22,12 @@ challengeRank = 3
 # Graphics 图像
 # res_pack_path = ""
 noteScale = 1.0
-chartDebug = 0.4
-chartRatio = 0.40
+# 谱面揭秘时配置
+# chartDebug = 0.4
+# chartRatio = 0.40
+# 谱面演示时配置
+chartDebug = 0.0
+chartRatio = 1.00
 
 disableLoading = false
 renderLine = true
