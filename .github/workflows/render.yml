@@ -1,4 +1,4 @@
-name: Install FFmpeg
+name: Render Video
 
 on: [push]
 
@@ -9,55 +9,51 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Base Dependencies
+      - name: Install Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             xvfb \
-            pulseaudio \
-            alsa-utils \
-            dbus-x11
+            libgl1-mesa-glx \
+            libasound2 \
+            alsa-utils
 
-      - name: Configure PulseAudio
+      - name: Configure ALSA Null Device
         run: |
-          # 创建配置目录
-          mkdir -p ~/.config/pulse/
-          
-          # 正确的daemon配置
-          echo "default-sample-format = s16le
-          default-sample-rate = 44100
-          realtime-scheduling = yes
-          exit-idle-time = -1
-          daemonize = yes
-          " > ~/.config/pulse/daemon.conf
+          # 创建虚拟音频设备配置
+          echo 'pcm.!default {
+            type plug
+            slave.pcm "null"
+          }
 
-          # 正确的client配置
-          echo "autospawn = no
-          default-server = unix:/tmp/pulse.socket
-          " > ~/.config/pulse/client.conf
+          ctl.!default {
+            type hw
+            card 0
+          }' | tee ~/.asoundrc
 
-      - name: Start PulseAudio
+          # 验证ALSA配置
+          aplay -l
+
+      - name: Install Phi-Recorder
         run: |
-          # 启动命令需要显式指定配置文件路径
-          pulseaudio \
-            --daemonize \
-            --log-target=file:/tmp/pulse.log \
-            --log-level=debug \
-            --disable-shm \
-            --file=~/.config/pulse/daemon.conf \
-            --high-priority
+          LATEST_RELEASE=$(curl -s "https://api.github.com/repos/2278535805/Phi-Recorder/releases/latest" | jq -r '.tag_name')
+          LATEST_VERSION="${LATEST_RELEASE:1}"
+          wget "https://github.com/2278535805/Phi-Recorder/releases/download/v${LATEST_VERSION}/phi-recorder_${LATEST_VERSION}_amd64.deb" -O phi-recorder.deb
+          sudo dpkg -i phi-recorder.deb || sudo apt-get install -f -y
 
-          # 验证服务状态
-          sleep 2
-          pactl --server=unix:/tmp/pulse.socket info
-
-      - name: Render with Xvfb
+      - name: Run Render
         run: |
           export LIBGL_ALWAYS_SOFTWARE=1
-          export SDL_AUDIODRIVER=pulseaudio
-          export PULSE_SERVER=unix:/tmp/pulse.socket
+          export SDL_AUDIODRIVER=alsa  # 强制使用ALSA
+          export MESA_GL_VERSION_OVERRIDE=3.3
 
-          xvfb-run -s "-screen 0 1920x1080x24 -ac" \
-            timeout 600s phi-recorder \
-            --render your-file.pez \
-            --output "output.mp4"
+          # 静默运行音频测试
+          timeout 5s arecord -d 5 test.wav >/dev/null 2>&1 || true
+
+          xvfb-run -s "-screen 0 1920x1080x24" \
+            phi-recorder \
+            --render AbsoluTedisoRdeR.AcuteDisarray-AT.pez \
+            --output "ATRR.mp4" \
+            --no-audio  # 如果支持禁用音频选项
+        env:
+          RUST_BACKTRACE: 1
