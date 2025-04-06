@@ -18,6 +18,14 @@ jobs:
             libasound2 \
             alsa-utils
 
+      - name: Install Static FFmpeg
+        run: |
+          # 下载预编译版本
+          wget https://github.com/eugeneware/ffmpeg-static/releases/download/b5.0.1/linux-x64
+          chmod +x linux-x64
+          sudo mv linux-x64 /usr/local/bin/ffmpeg
+          sudo ln -s /usr/local/bin/ffmpeg /usr/local/bin/ffprobe
+
       - name: Configure ALSA Null Device
         run: |
           # 创建虚拟音频设备配置
