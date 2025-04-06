@@ -1,9 +1,9 @@
 # Output 输出
-resolution = [1920, 1080]
+resolution = [1280, 720]
 fps = 60
 ffmpegPreset = "medium p4 medium balanced" # "cpu nvenc qsv amf"
 hardwareAccel = true
-sampleCount = 8
+sampleCount = 2
 hevc = false
 mpeg4 = false
 customEncoder = "libx264"
@@ -50,7 +50,7 @@ bgBlurriness = 80.0
 
 # Audio 音频
 forceLimit = true
-hires = true
+hires = false
 volumeMusic = 1.0
 volumeSfx = 0.7
 compressionRatio = 20.0
@@ -65,7 +65,7 @@ difficulty = ""
 allGood = false
 allBad = false
 judgeOffset = 0.0
-maxParticles = 100000
+maxParticles = 1000
 fade = 0.0
 
 simpleFileName = false
