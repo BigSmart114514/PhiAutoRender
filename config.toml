@@ -59,7 +59,7 @@ limitThreshold = 1.0
 
 # Other 其他
 endingLength = 10.0
-watermark = "Rendered with Phi-Recorder."
+watermark = "Auto Rendered with Phi-Recorder. Only released by 德猴先生 on Bilibili."
 combo = "AUTOPLAY"
 difficulty = ""
 allGood = false
