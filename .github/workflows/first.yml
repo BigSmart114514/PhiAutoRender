@@ -1,0 +1,14 @@
+# .github/workflows/first.yml
+name: First Action
+on: push
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Generate params
+      id: set-params
+      run: |
+        echo "params=[1,2]" >> $GITHUB_OUTPUT
+    outputs:
+      params: ${{ steps.set-params.outputs.params }}
