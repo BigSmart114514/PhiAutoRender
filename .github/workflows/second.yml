@@ -1,0 +1,15 @@
+# .github/workflows/second.yml 
+name: Second Action
+on:
+  workflow_run:
+    workflows: ["First Action"]
+    types: [completed]
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        param: ${{ fromJSON(needs.workflow_run.outputs.params) }}
+    steps:
+    - run: echo "Processing ${{ matrix.param }}"
