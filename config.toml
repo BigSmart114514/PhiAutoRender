@@ -22,7 +22,7 @@ challengeRank = 3
 # Graphics 图像
 # res_pack_path = ""
 noteScale = 1.0
-chartRatio = 0.25
+chartRatio = 0.50
 
 disableLoading = false
 renderLine = true
@@ -41,7 +41,7 @@ disableEffect = false
 doubleHint = true
 
 aggressive = false
-chartDebug = false
+chartDebug = true
 roman = false
 chinese = false
 
