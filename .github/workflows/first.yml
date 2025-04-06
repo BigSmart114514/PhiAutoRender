@@ -1,14 +1,19 @@
-# .github/workflows/first.yml
-name: First Action
-on: push
+name: First Workflow
+
+on:
+  push:
+    branches:
+      - main # 触发分支，可以根据你的需要修改
 
 jobs:
-  generate:
+  generate_outputs:
     runs-on: ubuntu-latest
     steps:
-    - name: Generate params
-      id: set-params
-      run: |
-        echo "params=[1,2]" >> $GITHUB_OUTPUT
+      - name: Generate outputs
+        run: |
+          echo "::set-output name=output1::1"
+          echo "::set-output name=output2::2"
+        id: generate_outputs
     outputs:
-      params: ${{ steps.set-params.outputs.params }}
+      output1: ${{ steps.generate_outputs.outputs.output1 }}
+      output2: ${{ steps.generate_outputs.outputs.output2 }}
