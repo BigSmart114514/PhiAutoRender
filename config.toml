@@ -22,7 +22,7 @@ challengeRank = 3
 # Graphics 图像
 # res_pack_path = ""
 noteScale = 1.0
-chartRatio = 1.0
+chartRatio = 0.25
 
 disableLoading = false
 renderLine = true
