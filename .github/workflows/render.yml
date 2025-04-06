@@ -20,68 +20,62 @@ jobs:
             pulseaudio \
             alsa-utils \
             libva-drm2 \
-            libva-x11-2 \
-            libvdpau1 \
             libxcb1 \
             libxcb-shm0 \
             libxcb-xfixes0 \
-            build-essential \
-            cmake \
-            libasound2-dev \
-            libpulse-dev \
-            libusb-1.0-0-dev \
-            libdbus-1-dev \
-            libudev-dev
+            dbus-x11
 
-      - name: Compile SDL2 2.0.20
+      - name: Configure PulseAudio
         run: |
-          wget https://github.com/libsdl-org/SDL/archive/refs/tags/release-2.0.20.tar.gz
-          tar xvf release-2.0.20.tar.gz
-          cd SDL-release-2.0.20
-          mkdir build && cd build
-          cmake .. -DCMAKE_INSTALL_PREFIX=/usr
-          make -j$(nproc)
-          sudo make install
-          sudo ldconfig
+          # 清理旧配置
+          rm -rf ~/.config/pulse || true
+          
+          # 创建虚拟音频设备
+          mkdir -p ~/.config/pulse
+          echo "default-sample-format = s16le
+          default-sample-rate = 44100
+          realtime-scheduling = yes
+          exit-idle-time = -1
+          daemonize = no
+          default-server = unix:/tmp/pulse.socket
+          " > ~/.config/pulse/daemon.conf
 
-      - name: Install Static FFmpeg
-        run: |
-          wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
-          tar xvf ffmpeg-release-amd64-static.tar.xz
-          cd ffmpeg-*-amd64-static
-          sudo mv ffmpeg ffprobe /usr/local/bin/
-          sudo ldconfig
+          # 创建客户端配置
+          echo "autospawn = no
+          default-server = unix:/tmp/pulse.socket
+          " > ~/.config/pulse/client.conf
 
-      - name: Install Phi-Recorder
+      - name: Start PulseAudio Server
         run: |
-          LATEST_RELEASE=$(curl -s "https://api.github.com/repos/2278535805/Phi-Recorder/releases/latest" | jq -r '.tag_name')
-          LATEST_VERSION="${LATEST_RELEASE:1}"
-          DEB_URL="https://github.com/2278535805/Phi-Recorder/releases/download/v${LATEST_VERSION}/phi-recorder_${LATEST_VERSION}_amd64.deb"
-          wget "${DEB_URL}" -O phi-recorder.deb
-          sudo dpkg -i phi-recorder.deb || (sudo apt-get update && sudo apt-get install -f -y)
+          # 启动独立的PulseAudio实例
+          pulseaudio \
+            --daemonize \
+            --log-target=file:/tmp/pulse.log \
+            --log-level=debug \
+            --disable-shm \
+            --exit-idle-time=-1 \
+            --file=/tmp/pulse-config
+
+      - name: Verify Audio System
+        run: |
+          sleep 2  # 等待服务启动
+          pactl --server=unix:/tmp/pulse.socket list sinks
+          grep -i error /tmp/pulse.log && exit 1 || true
 
       - name: Render with Xvfb
         run: |
-          # 配置音频环境
-          mkdir -p ~/.config/pulse
-          echo "default-server = unix:/tmp/pulse.socket" > ~/.config/pulse/client.conf
-          pulseaudio --daemonize --exit-idle-time=-1 --log-level=4 --file=/tmp/pulse.log
-
-          # 设置兼容性环境
           export LIBGL_ALWAYS_SOFTWARE=1
           export MESA_GL_VERSION_OVERRIDE=3.3
           export SDL_AUDIODRIVER=pulseaudio
           export PULSE_SERVER=unix:/tmp/pulse.socket
 
-          # 验证组件
-          sdl2-config --version
-          ffmpeg -version | head -n1
-          
-          # 启动渲染
+          # 创建虚拟音频设备
+          pactl --server=unix:/tmp/pulse.socket load-module module-null-sink sink_name=VirtualSpeaker
+          pactl --server=unix:/tmp/pulse.socket load-module module-null-source source_name=VirtualMic
+
           xvfb-run -s "-screen 0 1920x1080x24 -ac" \
             timeout 600s phi-recorder \
             --render AbsoluTedisoRdeR.AcuteDisarray-AT.pez \
-            --output "ATRR.mp4" \
-            --ffmpeg-args "-filter_complex 'amix=inputs=3:duration=first:normalize=0'"
+            --output "ATRR.mp4"
         env:
           RUST_BACKTRACE: full
