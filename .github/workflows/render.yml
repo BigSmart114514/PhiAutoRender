@@ -19,18 +19,30 @@ jobs:
             mesa-utils \
             pulseaudio \
             alsa-utils \
-            libsdl2-2.0-0 \
             libva-drm2 \
             libva-x11-2 \
             libvdpau1 \
             libxcb1 \
             libxcb-shm0 \
-            libxcb-xfixes0
+            libxcb-xfixes0 \
+            build-essential \
+            cmake \
+            libasound2-dev \
+            libpulse-dev \
+            libusb-1.0-0-dev \
+            libdbus-1-dev \
+            libudev-dev
 
-      - name: Install Latest SDL2
+      - name: Compile SDL2 2.0.20
         run: |
-          wget http://archive.ubuntu.com/ubuntu/pool/main/libs/libsdl2/libsdl2-2.0-0_2.0.20+dfsg-2ubuntu1_amd64.deb
-          sudo dpkg -i libsdl2-2.0-0_2.0.20+dfsg-2ubuntu1_amd64.deb || sudo apt-get install -f -y
+          wget https://github.com/libsdl-org/SDL/archive/refs/tags/release-2.0.20.tar.gz
+          tar xvf release-2.0.20.tar.gz
+          cd SDL-release-2.0.20
+          mkdir build && cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=/usr
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
 
       - name: Install Static FFmpeg
         run: |
@@ -50,22 +62,22 @@ jobs:
 
       - name: Render with Xvfb
         run: |
-          # 配置虚拟音频环境
+          # 配置音频环境
           mkdir -p ~/.config/pulse
           echo "default-server = unix:/tmp/pulse.socket" > ~/.config/pulse/client.conf
           pulseaudio --daemonize --exit-idle-time=-1 --log-level=4 --file=/tmp/pulse.log
 
-          # 设置兼容性环境变量
+          # 设置兼容性环境
           export LIBGL_ALWAYS_SOFTWARE=1
           export MESA_GL_VERSION_OVERRIDE=3.3
           export SDL_AUDIODRIVER=pulseaudio
           export PULSE_SERVER=unix:/tmp/pulse.socket
 
-          # 验证组件版本
+          # 验证组件
+          sdl2-config --version
           ffmpeg -version | head -n1
-          phi-recorder --version
           
-          # 启动渲染进程
+          # 启动渲染
           xvfb-run -s "-screen 0 1920x1080x24 -ac" \
             timeout 600s phi-recorder \
             --render AbsoluTedisoRdeR.AcuteDisarray-AT.pez \
