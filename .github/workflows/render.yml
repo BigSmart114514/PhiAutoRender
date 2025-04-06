@@ -1,4 +1,4 @@
-name: Install FFmpeg
+name: Render
 
 on: [push]
 
@@ -12,7 +12,16 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg xvfb libayatana-appindicator3-1 libwebkit2gtk-4.0-37 libgl1-mesa-glx libgl1-mesa-dri mesa-utils
+          sudo apt-get install -y \
+            ffmpeg \
+            xvfb \
+            libayatana-appindicator3-1 \
+            libwebkit2gtk-4.0-37 \
+            libgl1-mesa-glx \
+            libgl1-mesa-dri \
+            mesa-utils \
+            pulseaudio \
+            alsa-utils
 
       - name: Install Phi-Recorder
         run: |
@@ -27,8 +36,17 @@ jobs:
       
       - name: Render with Xvfb
         run: |
+          # 配置虚拟音频设备
+          echo 'pcm.!default { type null }' > ~/.asoundrc
+          echo 'ctl.!default { type null }' >> ~/.asoundrc
+          pulseaudio --daemonize --exit-idle-time=-1
+          
+          # 设置图形和音频环境变量
           export LIBGL_ALWAYS_SOFTWARE=1
           export MESA_GL_VERSION_OVERRIDE=3.3
+          export SDL_AUDIODRIVER=pulseaudio
+          
+          # 启动渲染
           xvfb-run -s "-screen 0 1920x1080x24" phi-recorder --render AbsoluTedisoRdeR.AcuteDisarray-AT.pez --output "ATRR.mp4"
         env:
           RUST_BACKTRACE: 1
