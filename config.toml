@@ -1,5 +1,5 @@
 # Output 输出
-resolution = [1280, 720]
+resolution = [1280, 960]
 fps = 60
 ffmpegPreset = "medium p4 medium balanced" # "cpu nvenc qsv amf"
 hardwareAccel = true
