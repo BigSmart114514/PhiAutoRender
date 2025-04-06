@@ -1,4 +1,4 @@
-name: Render
+name: Install FFmpeg
 
 on: [push]
 
@@ -12,6 +12,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
+          sudo add-apt-repository ppa:jonathonf/ffmpeg-4 -y  # 添加新版FFmpeg仓库
           sudo apt-get install -y \
             ffmpeg \
             xvfb \
@@ -21,7 +22,8 @@ jobs:
             libgl1-mesa-dri \
             mesa-utils \
             pulseaudio \
-            alsa-utils
+            alsa-utils \
+            libx264-dev  # 确保H.264编码支持
 
       - name: Install Phi-Recorder
         run: |
@@ -29,24 +31,27 @@ jobs:
           LATEST_VERSION="${LATEST_RELEASE:1}"
           DEB_URL="https://github.com/2278535805/Phi-Recorder/releases/download/v${LATEST_VERSION}/phi-recorder_${LATEST_VERSION}_amd64.deb"
           wget "${DEB_URL}" -O phi-recorder.deb
-          sudo dpkg -i phi-recorder.deb
+          sudo dpkg -i phi-recorder.deb || sudo apt-get install -f -y  # 自动修复依赖
 
-      - name: List Dir
-        run: ls -l
-      
       - name: Render with Xvfb
         run: |
           # 配置虚拟音频设备
           echo 'pcm.!default { type null }' > ~/.asoundrc
           echo 'ctl.!default { type null }' >> ~/.asoundrc
           pulseaudio --daemonize --exit-idle-time=-1
-          
-          # 设置图形和音频环境变量
+
+          # 设置新版FFmpeg路径（如果需要）
+          echo "/usr/bin" >> $GITHUB_PATH
+
+          # 设置环境变量
           export LIBGL_ALWAYS_SOFTWARE=1
           export MESA_GL_VERSION_OVERRIDE=3.3
           export SDL_AUDIODRIVER=pulseaudio
           
-          # 启动渲染
-          xvfb-run -s "-screen 0 1920x1080x24" phi-recorder --render AbsoluTedisoRdeR.AcuteDisarray-AT.pez --output "ATRR.mp4"
+          # 验证FFmpeg版本
+          ffmpeg -version
+          
+          # 增加渲染超时时间
+          xvfb-run -s "-screen 0 1920x1080x24" timeout 300s phi-recorder --render AbsoluTedisoRdeR.AcuteDisarray-AT.pez --output "ATRR.mp4"
         env:
           RUST_BACKTRACE: 1
