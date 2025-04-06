@@ -1,15 +1,16 @@
-# .github/workflows/second.yml 
-name: Second Action
+name: Second Workflow
+
 on:
   workflow_run:
-    workflows: ["First Action"]
-    types: [completed]
+    workflows: ["First Workflow"] # 替换为你的第一个工作流的名称
+    types:
+      - completed
 
 jobs:
-  process:
+  use_inputs:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        param: ${{ fromJSON(needs.workflow_run.outputs.params) }}
     steps:
-    - run: echo "Processing ${{ matrix.param }}"
+      - name: Use inputs from first workflow
+        run: |
+          echo "Input 1: ${{ github.event.workflow_run.outputs.output1 }}"
+          echo "Input 2: ${{ github.event.workflow_run.outputs.output2 }}"
