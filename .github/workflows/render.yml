@@ -65,3 +65,10 @@ jobs:
             --no-audio  # 如果支持禁用音频选项
         env:
           RUST_BACKTRACE: 1
+        
+      - name: Upload Video Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: rendered-video
+          path: ATRR.mp4
+          retention-days: 3
