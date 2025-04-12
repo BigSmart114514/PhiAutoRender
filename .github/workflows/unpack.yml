@@ -19,6 +19,8 @@ jobs:
       - name: Get APK URL
         id: get_url
         run: |
+          ls -l
+          pwd
           url = $(python download.py)
           echo "apk_url=$url" >> $GITHUB_OUTPUT
 
