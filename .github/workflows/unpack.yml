@@ -9,21 +9,11 @@ jobs:
     steps:
       - name: Checkout Phigros Resource
         uses: actions/checkout@v4
-        with:
-          repository: 7aGiven/Phigros_Resource
-          ref: master
 
-      - name: Get APK URL
-        id: get_url
+      - name: Download
+        id: download
         run: |
-          output=$(python taptap.py)
-          second_line=$(echo "$output" | awk 'NR==2')
-          apk_data=$(echo "$second_line" | python -c 'import json, sys; print(json.loads(sys.stdin)["data"]["apk"]["download"])')
-          echo "apk_url=$apk_data" >> $GITHUB_OUTPUT
-
-      - name: Download APK
-        run: |
-          wget "${{ steps.get_url.outputs.apk_url }}" -O phigros.apk
+          python download.py
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4.6.2
