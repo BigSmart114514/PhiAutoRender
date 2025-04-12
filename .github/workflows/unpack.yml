@@ -16,7 +16,7 @@ jobs:
       - name: Get APK URL
         id: get_url
         run: |
-          python taptap.py
+          python -c "import taptap; import os; url = taptap.taptap(165287); print(url); os.system('wget %s' % url); os.system('mv *.apk phigros.apk')"
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4.6.2
