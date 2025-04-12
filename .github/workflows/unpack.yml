@@ -1,0 +1,32 @@
+name: Download Phigros APK
+
+on: [push]
+
+jobs:
+  download_apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Navigate to Phigros_Resource-master
+        run: cd Phigros_Resource-master
+
+      - name: Get APK URL
+        id: get_url
+        run: |
+          url = $(python -c "import taptap; print(taptap.taptap(165287))")
+          echo "apk_url=$url" >> $GITHUB_OUTPUT
+
+      - name: Download APK
+        run: wget "${{ steps.get_url.outputs.apk_url }}"
+
+      - name: Rename APK
+        run: mv *.apk phigros.apk
+
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: phigros.apk
+          path: phigros.apk
