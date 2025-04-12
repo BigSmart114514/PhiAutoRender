@@ -10,14 +10,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Navigate to Phigros_Resource-master
-        run: |
-          cd Phigros_Resource-master
-          ls
-
       - name: Get APK URL
         id: get_url
         run: |
+          cd Phigros_Resource-master
+          ls
           url = $(python download.py)
           echo "apk_url=$url" >> $GITHUB_OUTPUT
 
