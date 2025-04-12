@@ -18,7 +18,7 @@ jobs:
       - name: Get APK URL
         id: get_url
         run: |
-          url = $(python -c "from Phigros_Resource-master import taptap; print(taptap.taptap(165287))")
+          url = $(python download.py)
           echo "apk_url=$url" >> $GITHUB_OUTPUT
 
       - name: Download APK
