@@ -15,8 +15,6 @@ jobs:
         run: |
           ls -l
           pwd
-          url = $(python download.py)
-          echo "apk_url=$url" >> $GITHUB_OUTPUT
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4.6.2
