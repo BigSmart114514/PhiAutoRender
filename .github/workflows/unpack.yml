@@ -10,16 +10,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Checkout Phigros Resource
-        uses: actions/checkout@v4
-        with:
-          repository: 7aGiven/Phigros_Resource
-          ref: master
-
       - name: Get APK URL
         id: get_url
         run: |
-          cd ../
           ls -l
           pwd
           url = $(python download.py)
