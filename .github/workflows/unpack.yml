@@ -16,8 +16,10 @@ jobs:
       - name: Get APK URL
         id: get_url
         run: |
-          python taptap.py
-          echo "apk_url=$(python taptap.py | jq -r '.data.apk.download')" >> $GITHUB_OUTPUT
+          output=$(python taptap.py)
+          second_line=$(echo "$output" | awk 'NR==2')
+          apk_data=$(echo "$second_line" | python -c 'import json, sys; print(json.loads(sys.stdin)["data"]["apk"]["download"])')
+          echo "apk_url=$apk_data" >> $GITHUB_OUTPUT
 
       - name: Download APK
         run: |
