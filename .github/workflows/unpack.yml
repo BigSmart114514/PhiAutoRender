@@ -17,6 +17,11 @@ jobs:
         id: get_url
         run: |
           python taptap.py
+          echo "apk_url=$(python taptap.py | jq -r '.data.apk.download')" >> $GITHUB_OUTPUT
+
+      - name: Download APK
+        run: |
+          wget "${{ steps.get_url.outputs.apk_url }}" -O phigros.apk
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4.6.2
