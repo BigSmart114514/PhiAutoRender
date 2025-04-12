@@ -19,6 +19,7 @@ jobs:
       - name: Get APK URL
         id: get_url
         run: |
+          cd ../
           ls -l
           pwd
           url = $(python download.py)
