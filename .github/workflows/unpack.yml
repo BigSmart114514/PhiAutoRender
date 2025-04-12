@@ -16,7 +16,7 @@ jobs:
       - name: Get APK URL
         id: get_url
         run: |
-          python taptap.py"
+          python taptap.py
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4.6.2
