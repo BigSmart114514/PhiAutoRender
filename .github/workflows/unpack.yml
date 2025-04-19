@@ -1,6 +1,12 @@
 name: Download Phigros APK
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - illustration/**
+      - chart/**
 
 jobs:
   download_apk:
@@ -15,8 +21,25 @@ jobs:
         run: |
           python download.py
 
-      - name: Upload APK as Artifact
-        uses: actions/upload-artifact@v4.6.2
-        with:
-          name: phigros.apk
-          path: phigros.apk
+      - name: Unpack
+        run: |
+          python gameInformation.py phigros.apk
+          python resource.py phigros.apk
+
+      - name: Commit Illustration Folder
+        run: |
+          git config --local user.name "Github Actions"
+          git config --local user.email "githubactions@github.com"
+          cd illustration
+          git add .
+          git commit -m "illustrations"
+          git push origin HEAD:illustration
+
+      - name: Commit Chart Folder
+        run: |
+          cd ../chart
+          git add .
+          git commit -m "charts"
+          git push origin HEAD:chart
+
+        
