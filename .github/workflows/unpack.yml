@@ -37,10 +37,10 @@ jobs:
           cd illustration
           git add .
           git commit -m "illustrations"
-          git push origin HEAD:illustration
+          git push --force origin HEAD:illustration
       - name: Commit Chart Folder
         run: |
           cd ../chart
           git add .
           git commit -m "charts"
-          git push origin HEAD:chart
+          git push --force origin HEAD:chart
