@@ -12,6 +12,8 @@ on:
 jobs:
   download_apk:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # 授予写入仓库内容的权限
 
     steps:
       - name: Checkout Phigros Resource
@@ -24,12 +26,10 @@ jobs:
         id: download
         run: |
           python download.py
-
       - name: Unpack
         run: |
           python gameInformation.py phigros.apk
           python resource.py phigros.apk
-
       - name: Commit Illustration Folder
         run: |
           git config --local user.name "Github Actions"
@@ -38,7 +38,6 @@ jobs:
           git add .
           git commit -m "illustrations"
           git push origin HEAD:illustration
-
       - name: Commit Chart Folder
         run: |
           cd ../chart
