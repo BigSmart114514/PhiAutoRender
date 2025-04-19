@@ -7,9 +7,10 @@ def download():
     print(url)
     retries = 3
     wait_time = 10
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
     for i in range(retries + 1):
-        command = f"wget -O phigros.apk {url}"
+        command = f"wget -O phigros.apk --user-agent='{user_agent}' '{url}'"
         result = os.system(command)
         if result == 0:
             print("Download successful!")
