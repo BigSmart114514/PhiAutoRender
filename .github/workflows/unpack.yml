@@ -7,6 +7,7 @@ on:
     paths:
       - illustration/**
       - chart/**
+  workflow_dispatch: # 添加 workflow_dispatch 以支持手动触发
 
 jobs:
   download_apk:
@@ -41,5 +42,3 @@ jobs:
           git add .
           git commit -m "charts"
           git push origin HEAD:chart
-
-        
