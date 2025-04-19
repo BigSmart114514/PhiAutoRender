@@ -17,6 +17,9 @@ jobs:
       - name: Checkout Phigros Resource
         uses: actions/checkout@v4
 
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
       - name: Download
         id: download
         run: |
