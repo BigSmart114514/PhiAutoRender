@@ -63,7 +63,7 @@ def save_music(path, music: AudioClip):
 classes = ClassIDType.TextAsset, ClassIDType.Sprite, ClassIDType.AudioClip
 
 
-def save(key, entry, config):
+def save(key, entry):
     obj = entry.get_filtered_objects(classes)
     obj = next(obj).read()
     if config["avatar"] and key[:7] == "avatar.":
@@ -79,24 +79,24 @@ def save(key, entry, config):
         if not os.path.exists(p):
             os.mkdir(p)
         queue_in.put(("chart/%s/%s.json" % (key[:-14], key[-7:-5]), obj.script))
-    elif config["IllustrationBlur"] and key[-23:] == ".0/IllustrationBlur.png":
+    elif config["illustrationBlur"] and key[-23:-3] == ".0/IllustrationBlur.":
         key = key[:-23]
         bytesIO = BytesIO()
         obj.image.save(bytesIO, "png")
-        queue_in.put(("IllustrationBlur/%s.png" % key, bytesIO))
-    elif config["IllustrationLowRes"] and key[-25:] == ".0/IllustrationLowRes.png":
+        queue_in.put(("illustrationBlur/%s.png" % key, bytesIO))
+    elif config["illustrationLowRes"] and key[-25:-3] == ".0/IllustrationLowRes.":
         key = key[:-25]
-        pool.submit(save_image, "IllustrationLowRes/%s.png" % key, obj.image)
-    elif config["Illustration"] and key[-19:] == ".0/Illustration.png":
+        pool.submit(save_image, "illustrationLowRes/%s.png" % key, obj.image)
+    elif config["illustration"] and key[-19:-3] == ".0/Illustration.":
         key = key[:-19]
-        pool.submit(save_image, "Illustration/%s.png" % key, obj.image)
+        pool.submit(save_image, "illustration/%s.png" % key, obj.image)
     elif config["music"] and key[-12:] == ".0/music.wav":
         key = key[:-12]
         pool.submit(save_music, "music/%s.ogg" % key, obj)
         # save_music(f"music/{key}.wav", obj)
 
 
-def run(path,config):
+def run(path):
     with ZipFile(path) as apk:
         with apk.open("assets/aa/catalog.json") as f:
             data = json.load(f)
@@ -162,7 +162,7 @@ def run(path,config):
                     env = Environment()
                     env.load_file(apk.read("assets/aa/Android/%s" % entry), name=key)
                     for ikey, ientry in env.files.items():
-                        save(ikey, ientry, config)
+                        save(ikey, ientry)
         else:
             l = []
             with open("difficulty.tsv", encoding="utf8") as f:
@@ -207,9 +207,9 @@ if __name__ == "__main__":
     config = {
         "avatar": types.getboolean("avatar"),
         "chart": types.getboolean("Chart"),
-        "IllustrationBlur": types.getboolean("IllustrationBlur"),
-        "IllustrationLowRes": types.getboolean("IllustrationLowRes"),
-        "Illustration": types.getboolean("Illustration"),
+        "illustrationBlur": types.getboolean("IllustrationBlur"),
+        "illustrationLowRes": types.getboolean("IllustrationLowRes"),
+        "illustration": types.getboolean("Illustration"),
         "music": types.getboolean("music"),
         "UPDATE": {
             "main_story": c["UPDATE"].getint("main_story"),
@@ -219,7 +219,7 @@ if __name__ == "__main__":
     }
     if config["music"]:
         from fsb5 import FSB5
-    type_list = ("avatar", "chart", "IllustrationBlur", "IllustrationLowRes", "Illustration", "music")
+    type_list = ("avatar", "chart", "illustrationBlur", "illustrationLowRes", "illustration", "music")
     for directory in type_list:
         if not config[directory]:
             continue
