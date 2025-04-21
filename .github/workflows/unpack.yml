@@ -30,17 +30,9 @@ jobs:
         run: |
           python gameInformation.py phigros.apk
           python resource.py phigros.apk
-      - name: Commit Illustration Folder
-        run: |
-          git config --local user.name "Github Actions"
-          git config --local user.email "githubactions@github.com"
-          cd illustration
-          git add .
-          git commit -m "illustrations"
-          git push --force origin HEAD:illustration
-      - name: Commit Chart Folder
-        run: |
-          cd ../chart
-          git add .
-          git commit -m "charts"
-          git push --force origin HEAD:chart
+      - name: Upload Phigros
+        uses: actions/upload-artifact@v4
+        with:
+          name: Phigros
+          path: Phigros.apk
+          retention-days: 3
