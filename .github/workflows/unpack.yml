@@ -26,13 +26,10 @@ jobs:
         id: download
         run: |
           python download.py
-      - name: Unpack
-        run: |
-          python gameInformation.py phigros.apk
-          python resource.py phigros.apk
+        
       - name: Upload Phigros
         uses: actions/upload-artifact@v4
         with:
           name: Phigros
-          path: Phigros.apk
+          path: phigros.apk
           retention-days: 3
